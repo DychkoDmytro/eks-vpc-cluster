@@ -1,0 +1,19 @@
+server:
+  service:
+    type: ClusterIP
+
+  extraArgs:
+    - --insecure
+
+configs:
+  rbac:
+    policy.default: role:readonly
+
+  params:
+    server.insecure: "true"
+    timeout.reconciliation: 120s
+    timeout.reconciliation.jitter: 60s
+
+  cm:
+    timeout.reconciliation: 120s
+
