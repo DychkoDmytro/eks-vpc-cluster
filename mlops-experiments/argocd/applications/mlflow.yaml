@@ -1,0 +1,86 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlflow
+  namespace: infra-tools
+spec:
+  project: default
+
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: mlflow
+    targetRevision: 5.1.0
+
+    helm:
+      releaseName: mlflow
+      values: |
+        global:
+          security:
+            allowInsecureImages: true
+
+        image:
+          registry: docker.io
+          repository: bitnamilegacy/mlflow
+          tag: 3.1.1-debian-12-r1
+
+        tracking:
+          replicaCount: 1
+
+          service:
+            type: ClusterIP
+            ports:
+              http: 5000
+
+          tolerations:
+            - key: workload
+              operator: Equal
+              value: gpu
+              effect: NoSchedule
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+        run:
+          enabled: false
+
+        postgresql:
+          enabled: false
+
+        minio:
+          enabled: true
+
+        externalDatabase:
+          dialectDriver: postgresql
+          host: mlflow-postgres-postgresql
+          port: 5432
+          user: mlflow
+          password: mlflow123456
+          database: mlflow
+
+        waitContainer:
+          image:
+            registry: docker.io
+            repository: bitnamilegacy/os-shell
+            tag: 12-debian-12-r51
+
+        volumePermissions:
+          image:
+            registry: docker.io
+            repository: bitnamilegacy/os-shell
+            tag: 12-debian-12-r51
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlflow
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
